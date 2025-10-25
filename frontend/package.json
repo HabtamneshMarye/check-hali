@@ -9,7 +9,6 @@
     "lint": "eslint"
   },
   "dependencies": {
-    "@fontsource/albert-sans": "^5.2.8",
     "chart.js": "^4.5.1",
     "next": "16.0.0",
     "react": "19.2.0",
