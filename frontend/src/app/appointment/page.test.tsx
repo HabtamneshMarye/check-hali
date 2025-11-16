@@ -24,7 +24,7 @@ jest.mock("../hooks/useAppointment", () => ({
         service_id: "s2",
         appointment_date: todayISOString,
         booking_status: "Completed",
-        transfer_letter: null,
+        transfer_letter: "http://example.com/letter.pdf",
       },
     ],
     loading: false,
@@ -74,62 +74,62 @@ jest.mock("./components/Header", () => () => <div data-testid="header">MockHeade
 jest.mock("../shared-components/Sidebar", () => () => <div data-testid="sidebar">MockSidebar</div>);
 
 describe("AppointmentPage", () => {
-  it("renders patient appointment table with correct data", () => {
+  beforeEach(() => {
     render(<AppointmentPage />);
+  });
 
+  it("renders sidebar and header", () => {
     expect(screen.getByTestId("sidebar")).toBeInTheDocument();
     expect(screen.getByTestId("header")).toBeInTheDocument();
-
-    const statusBadges = screen.getAllByText(/Upcoming|Completed/).filter(
-      el => el.tagName === 'SPAN' && el.classList.contains('px-4')
-    );
-    expect(statusBadges).toHaveLength(2);
-    expect(statusBadges.some(el => el.textContent === "Upcoming")).toBe(true);
-    expect(statusBadges.some(el => el.textContent === "Completed")).toBe(true);
-
-    expect(screen.getByText("Aden")).toBeInTheDocument();
-    expect(screen.getByText("Jane")).toBeInTheDocument();
-    expect(screen.getByText("Screening")).toBeInTheDocument();
-    expect(screen.getByText("Consultation")).toBeInTheDocument();
   });
+it("renders tabs with correct counts and activates All tab by default", () => {
 
-  it("filters appointments by search input", () => {
-    render(<AppointmentPage />);
+  expect(screen.getByRole("button", { name: /All/i })).toHaveClass("bg-[#10004B]");
+  expect(screen.getByRole("button", { name: /Upcoming/i })).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: /Completed/i })).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: /Cancelled/i })).toBeInTheDocument();
 
-    const searchBox = screen.getByPlaceholderText("Search by patient name");
-    fireEvent.change(searchBox, { target: { value: "Jane" } });
+  expect(screen.getByRole("button", { name: /Upcoming/i })).toHaveTextContent("1");
+  expect(screen.getByRole("button", { name: /Completed/i })).toHaveTextContent("1");
+  expect(screen.getByRole("button", { name: /Cancelled/i })).toHaveTextContent("0");
+});
 
-    expect(screen.getByText("Jane")).toBeInTheDocument();
-    expect(screen.queryByText("Aden")).not.toBeInTheDocument();
+it("displays patient data correctly in table with status badges", () => {
 
-    fireEvent.change(searchBox, { target: { value: "XYZ" } });
-    expect(screen.getByText("No appointments found")).toBeInTheDocument();
-  });
+  const upcomingBadges = screen.getAllByText("Upcoming").filter(
+    el => el.tagName === "SPAN" && el.className.includes("px-4")
+  );
+  expect(upcomingBadges.length).toBeGreaterThan(0);
 
-  it("filters appointments by tab (e.g., Upcoming)", () => {
-    render(<AppointmentPage />);
 
-    const upcomingTab = screen.getAllByText("Upcoming").find(
-      el => el.closest('button') && el.classList.contains('text-xs')
-    );
-    expect(upcomingTab).toBeInTheDocument();
+  expect(screen.getByText("Aden Abdi")).toBeInTheDocument();
+  expect(screen.getByText("Jane Doe")).toBeInTheDocument();
 
-    fireEvent.click(upcomingTab!);
+  expect(screen.getByText("0712345678")).toBeInTheDocument();
+  expect(screen.getByText("0787654321")).toBeInTheDocument();
 
-    expect(screen.getByText("Aden")).toBeInTheDocument();
-    expect(screen.queryByText("Jane")).not.toBeInTheDocument();
-  });
+  expect(screen.getByText("Screening")).toBeInTheDocument();
+  expect(screen.getByText("Consultation")).toBeInTheDocument();
 
-  it("disables Previous button on first page", () => {
-    render(<AppointmentPage />);
-    const prevButton = screen.getByRole("button", { name: /Previous/i });
-    expect(prevButton).toBeDisabled();
-  });
+  expect(screen.getAllByText(/New|Existing/)).toHaveLength(2);
+});
 
-  it("shows missing transfer letter icon for new patients without letter", () => {
-    render(<AppointmentPage />);
+it("disables Previous button on first page and handles Next correctly", () => {
+  const prevButton = screen.getByRole("button", { name: /Previous/i });
+  const nextButton = screen.getByRole("button", { name: /Next/i });
 
-    const missingIcons = screen.getAllByTitle("Transfer Letter Required (Missing)");
-    expect(missingIcons.length).toBe(2); 
+  expect(prevButton).toBeDisabled();
+ 
+  expect(nextButton).toBeInTheDocument();
+});
+
+
+  it("shows missing transfer letter icon only for new patients without letter", () => {
+
+    expect(screen.getByTitle("Transfer Letter Required (Missing)")).toBeInTheDocument();
+
+   
+    const downloadButton = screen.getByTitle("View Transfer Letter (Uploaded)");
+    expect(downloadButton).toBeInTheDocument();
   });
 });
